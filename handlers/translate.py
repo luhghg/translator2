@@ -19,11 +19,11 @@ async def cmd_translate(message: types.Message, state: FSMContext):
 
 
 @router.message(TranslateState.text, F.text)
-def process_translate(message: types.Message, state: FSMContext):
-    data = state.get_data()
+async def process_translate(message: types.Message, state: FSMContext):
+    data = await state.get_data()   # ✅ добавили await
     src = data.get("src", "auto")
     dest = data.get("dest", "en")
 
     translated = translate_text(message.text, src=src, dest=dest)
-    state.clear()
-    message.answer(f"🔤 Перевод:\n{translated}")
+    await state.clear()
+    await message.answer(f"🔤 Перевод:\n{translated}")
