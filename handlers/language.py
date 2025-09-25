@@ -1,23 +1,37 @@
-from aiogram import Router, types
+from aiogram import Router, types, F
+from aiogram.filters import Command
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
 router = Router()
 
-# Состояния для FSM
+
 class LanguageState(StatesGroup):
-    src = State()   # исходный язык
-    dest = State()  # язык перевода
+    src = State()
+    dest = State()
 
-# Хендлер для выбора исходного языка
-@router.message(commands=["setlang"])
-async def choose_src(message: types.Message, state: FSMContext):
+
+@router.message(Command("setlang"))
+async def cmd_setlang(message: types.Message, state: FSMContext):
     await state.set_state(LanguageState.src)
-    await message.answer("Выбери исходный язык (например, ru, en, ko, ja, la)")
+    await message.answer("Введи исходный язык (например: en, ru, ja)")
 
-# Обработка ввода исходного языка
-@router.message(LanguageState.src)
-async def set_src(message: types.Message, state: FSMContext):
+
+@router.message(LanguageState.src, F.text)
+async def process_src(message: types.Message, state: FSMContext):
     await state.update_data(src=message.text.lower())
     await state.set_state(LanguageState.dest)
-    await message.answer("Теперь выбери язык перевода (например, ru, en, ko, ja, la)")
+    await message.answer("Теперь введи язык перевода (например: en, ru, ja)")
+
+
+@router.message(LanguageState.dest, F.text)
+async def process_dest(message: types.Message, state: FSMContext):
+    await state.update_data(dest=message.text.lower())
+    data = await state.get_data()
+    await state.clear()
+    await message.answer(
+        f"✅ Языки сохранены!\n"
+        f"Исходный: {data['src']}\n"
+        f"Перевод: {data['dest']}\n\n"
+        f"Теперь напиши /translate и введи текст ✍️"
+    )
